@@ -1,6 +1,7 @@
 package com.isaidev.imeiexample;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -10,7 +11,9 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -34,11 +37,10 @@ public class MainActivity extends AppCompatActivity {
 
 
         obtenerImei.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view) {
-              String  respuesta = obtenerIMEI();
-                Toast.makeText(MainActivity.this, "El imei es : " + respuesta, Toast.LENGTH_SHORT).show();
-
+                obtenerIdentificador();
             }
         });
     }
@@ -57,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, requestCode);
             }
         } else {
-            imei = obtenerIMEI();
             Toast.makeText(this,permission + " El permiso a la aplicación esta concedido.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Resultado de permisos
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
@@ -74,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 // Validacion para ver si el usuario acepto los permisos en el onRequest
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    imei = obtenerIMEI();
+                    obtenerIdentificador();
 
                 } else {
 
@@ -86,20 +88,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    //Obtenemos IMEI
+    //Obtenemos IDENTIFICADOR
 
-    private String obtenerIMEI() {
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private String obtenerIdentificador() {
         final TelephonyManager telephonyManager= (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            //Hacemos la validación de métodos, para versiones anteriores de androids
-            return telephonyManager.getImei();
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&  Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            // versiones con android 6 a 9
+            TelephonyManager tm = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+            String respuesta = tm.getImei();
+            Toast.makeText(MainActivity.this, "Es version superior a 6 e inferior a 9 " + "El IMEI ES: " + respuesta , Toast.LENGTH_SHORT).show();
+        }else if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            // versiones con android 10 arriba
+            String respuesta = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            Toast.makeText(MainActivity.this, "Es version superior a 9 " + "El ANDROID_ID ES: " + respuesta , Toast.LENGTH_SHORT).show();
         }
-        else {
-            return telephonyManager.getDeviceId();
+        else{
+            // versiones con android 6 a 9
+            TelephonyManager tm = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+            String respuesta = tm.getImei();
+            Toast.makeText(MainActivity.this, "Es inferior a 6 " + "El IMEI ES: " + respuesta , Toast.LENGTH_SHORT).show();
         }
-
+        return null;
     }
+
 
 }
 
